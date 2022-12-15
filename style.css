@@ -41,10 +41,14 @@ p {
 .cell {
   z-index: 0;
   transition: transform 0.3s ease-in-out;
+  border: dashed 2px transparent;
+  transition: border 0.1s ease-in-out;
 }
 
 .cell:hover {
-  transform: scale(0.9);
+  transition: border 0s ease-in-out;
+
+  border: dashed 2px #eae0c2;
 }
 
 #pawnShelf {

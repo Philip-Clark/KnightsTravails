@@ -167,7 +167,7 @@ const startDrag = (e, ele) => {
 };
 const endDrag = () => {
   markerToMove.style.position = 'absolute';
-  markerToMove.style.transition = 'all 0.3s ease';
+  markerToMove.style.transition = 'all 0.2s cubic-bezier(0.66, 1.01, 0.85, 1.05) 0s';
   knight.style.pointerEvents = 'all';
   target.style.pointerEvents = 'all';
   document.removeEventListener('mousemove', dragMarker);
