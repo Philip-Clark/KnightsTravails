@@ -58,7 +58,7 @@ const showControls = (p) => {
   playBar.id = 'playBar';
 
   stepBackward.src = './assets/chevronRight.png';
-  stepForward.src = './assets/chevronleft.png';
+  stepForward.src = './assets/chevronLeft.png';
   play.src = './assets/play.png';
 
   playBar.append(stepBackward, play, stepForward, stepMap);
