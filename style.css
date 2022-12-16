@@ -4,15 +4,21 @@ html,
 body {
   margin: 0;
   padding: 0;
-  height: 100vh;
-  overflow: hidden;
+}
+
+:root {
+  --vh: 100;
 }
 
 body {
   background: #202026;
   font-family: 'Inter', sans-serif;
   position: relative;
+  overflow: hidden;
+  height: 100vh;
+  height: calc(var(--vh, 1vh) * 100);
 }
+
 #version {
   position: absolute;
   bottom: 0;
@@ -79,7 +85,7 @@ p {
 
 #pawnShelf {
   margin: auto;
-  padding: 3rem 0;
+  padding: clamp(0px, 3vw, 2em) 0;
   display: grid;
   grid-template-columns: repeat(2, min(50vw, 150px));
   justify-items: center;
@@ -98,7 +104,7 @@ p {
   margin: auto;
   padding: 3rem 0;
   display: grid;
-  grid-template-columns: repeat(3, min(33vw, 150px));
+  grid-template-columns: repeat(3, min(25vw, 150px));
   justify-items: center;
   align-items: center;
   justify-content: center;
@@ -118,4 +124,7 @@ p {
 #playBar p {
   grid-column: 1 / 4;
   text-align: center;
+}
+
+@media (min-width: 600px) {
 }
