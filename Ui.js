@@ -2,22 +2,54 @@ let draggingPiece = false;
 //#region Board
 const board = document.createElement('div');
 board.id = 'board';
+let up = null;
+
+const placementSound = new Audio('./assets/place.wav');
 
 for (let i = Board.size; i > 0; i--) {
   for (let j = 1; j <= Board.size; j++) {
     const cell = document.createElement('div');
     cell.id = `${j},${i}`;
-    cell.addEventListener('mouseup', () => {
-      if (!draggingPiece) return;
-      updateMarkerPosition(markerToMove, cell.id);
-      updateTreePositions([j, i], markerToMove == knight ? 'start' : 'end');
-    });
     cell.classList = 'cell ';
     cell.classList +=
       i % 2 == 0 ? (j % 2 == 0 ? 'black' : 'white') : j % 2 == 0 ? 'white' : 'black';
     board.append(cell);
   }
 }
+
+const Speaker = (sound) => {
+  const s = sound;
+  let playing = false;
+  const playSound = async (sound, delay = 0) => {
+    playing = true;
+    setTimeout(() => {
+      sound.play();
+    }, delay);
+  };
+  const play = () => {
+    playing = true;
+    s.play();
+  };
+  const pause = () => {
+    playing = false;
+    s.pause();
+  };
+  const setVolume = (volume) => {
+    s.volume = volume;
+  };
+
+  const isPlaying = () => {
+    return playing;
+  };
+
+  return { playSound, play, pause, setVolume, isPlaying };
+};
+
+const soundEffects = Speaker();
+const music = Speaker(new Audio('./assets/music.mp3'));
+music.setVolume(0.05);
+
+let animationInterval = null;
 
 //#endregion
 
@@ -49,10 +81,23 @@ const playBar = document.createElement('div');
 const play = document.createElement('img');
 const stepMap = document.createElement('p');
 
+let path = undefined;
+
+const musicButton = document.getElementById('toggleMusic');
+musicButton.addEventListener('click', () => {
+  if (music.isPlaying()) {
+    music.pause();
+    musicButton.src = './assets/musicOff.png';
+  } else {
+    music.play();
+    musicButton.src = './assets/musicOn.png';
+  }
+});
+
 //#region playBar
 const showControls = (p) => {
   let currentPosition = 0;
-  const path = p;
+  path = p;
   let stepCount = path.getEnd();
 
   playBar.id = 'playBar';
@@ -60,6 +105,9 @@ const showControls = (p) => {
   stepBackward.src = './assets/chevronRight.png';
   stepForward.src = './assets/chevronLeft.png';
   play.src = './assets/play.png';
+  stepBackward.className = 'icon';
+  stepForward.className = 'icon';
+  play.className = 'icon';
 
   playBar.append(stepBackward, play, stepForward, stepMap);
   //#endregion
@@ -71,41 +119,62 @@ const showControls = (p) => {
   const updateStepCounter = () => {
     stepMap.textContent = `${currentPosition}/${stepCount}`;
   };
-  stepForward.addEventListener('click', () => {
-    currentPosition = path.stepForward();
-    updateStepCounter();
 
-    updateMarkerPosition(knight, path.getCurrentMove());
-  });
+  const stepBackwardHandler = () => {
+    stopAnimation();
+    if (path.getCurrent() == 0) return;
 
-  stepBackward.addEventListener('click', () => {
     currentPosition = path.stepBackward();
     updateStepCounter();
 
     updateMarkerPosition(knight, path.getCurrentMove());
-  });
+    soundEffects.playSound(placementSound, 150);
+  };
+  const stepForwardHandler = () => {
+    if (path.getCurrent() == path.getEnd()) return;
+
+    currentPosition = path.stepForward();
+    updateStepCounter();
+
+    updateMarkerPosition(knight, path.getCurrentMove());
+    soundEffects.playSound(placementSound, 150);
+  };
+
+  stepForward.addEventListener('click', stepForwardHandler);
+
+  stepBackward.addEventListener('click', stepBackwardHandler);
+
   updateStepCounter();
 
   const playAnimation = () => {
+    stopAnimation();
     path.reset();
     play.classList.toggle('disabled');
     updateMarkerPosition(knight, path.getCurrentMove());
-
-    const playInterval = setInterval(() => {
+    stepForwardHandler();
+    animationInterval = setInterval(() => {
       if (path.getCurrent() == path.getEnd()) {
-        clearInterval(playInterval);
-        play.classList.toggle('disabled');
+        stopAnimation();
       }
-      currentPosition = path.stepForward();
-      updateStepCounter();
-      updateMarkerPosition(knight, path.getCurrentMove());
-    }, 900);
+      stepForwardHandler();
+    }, 950);
+    console.log(animationInterval);
   };
+
   play.addEventListener('click', playAnimation);
 };
 
+const stopAnimation = () => {
+  clearInterval(animationInterval);
+  play.classList.remove('disabled');
+};
+
+const spreader = document.createElement('div');
+spreader.className = 'spreader';
+
 pawnShelf.append(knight);
 pawnShelf.append(target);
+
 document.body.append(pawnShelf);
 document.body.append(board);
 document.body.append(playBar);
@@ -123,7 +192,7 @@ const getCellPosition = (coords) => {
   const cellOffset = cell.offsetWidth / 2;
   const rect = cell.getBoundingClientRect();
   const widthOffset = cellOffset - knight.offsetWidth / 2;
-  const heightOffset = cellOffset - knight.offsetHeight / 1.5;
+  const heightOffset = cellOffset - knight.offsetHeight / 1.1;
 
   // const cellMid = cell.offsetWidth / 2;
   const position = {
@@ -143,43 +212,70 @@ let markerToMove = knight;
 
 const dragKnight = (e) => {
   markerToMove = knight;
-  knight.style.pointerEvents = 'none';
-  target.style.pointerEvents = 'none';
+
   startDrag(e);
 };
 const dragTarget = (e) => {
   markerToMove = target;
-  knight.style.pointerEvents = 'none';
-  target.style.pointerEvents = 'none';
+  if (path != undefined) {
+    let newStart = path.getCurrentMove().split(',');
+    newStart = [parseInt(newStart[0]), parseInt(newStart[1])];
+    updateTreePositions(newStart, 'start');
+  }
   startDrag(e);
 };
 
-knight.addEventListener('mousedown', dragKnight);
-target.addEventListener('mousedown', dragTarget);
+knight.addEventListener('pointerdown', dragKnight);
+target.addEventListener('pointerdown', dragTarget);
 
-const startDrag = (e, ele) => {
+const startDrag = (e) => {
+  stopAnimation();
+  e.preventDefault();
   draggingPiece = true;
   markerToMove.style.position = 'absolute';
   markerToMove.style.transition = 'all 0s';
-  e.preventDefault();
-  document.addEventListener('mouseup', endDrag);
-  document.addEventListener('mousemove', dragMarker);
+  knight.style.pointerEvents = 'none';
+  target.style.pointerEvents = 'none';
+  target.style.touchAction = 'none';
+  knight.style.touchAction = 'none';
+  document.addEventListener('pointerup', endDrag);
+  document.addEventListener('pointermove', dragMarker);
 };
-const endDrag = () => {
+const endDrag = (e) => {
+  e.preventDefault();
   markerToMove.style.position = 'absolute';
-  markerToMove.style.transition = 'all 0.2s cubic-bezier(0.66, 1.01, 0.85, 1.05) 0s';
+  markerToMove.style.transition = 'all 0.3s ease-in-out 0s';
   knight.style.pointerEvents = 'all';
   target.style.pointerEvents = 'all';
-  document.removeEventListener('mousemove', dragMarker);
-  document.removeEventListener('mouseup', endDrag);
+  target.style.touchAction = 'all';
+  knight.style.touchAction = 'all';
+
+  const elementStack = document.elementsFromPoint(e.pageX, e.pageY);
+  const cell = elementStack.filter((element) => element.classList.contains('cell'));
+  if (cell[0] != null) dropMarkerOnCell(cell[0].id);
+
+  document.removeEventListener('pointermove', dragMarker);
+  document.removeEventListener('pointerup', endDrag);
+
   draggingPiece = false;
+};
+
+const dropMarkerOnCell = (id) => {
+  soundEffects.playSound(placementSound);
+  if (!draggingPiece) return;
+  const x = parseInt(id.split(',')[0]);
+  const y = parseInt(id.split(',')[1]);
+  updateMarkerPosition(markerToMove, id);
+  updateTreePositions([x, y], markerToMove == knight ? 'start' : 'end');
 };
 
 const dragMarker = (e) => {
   e.preventDefault();
-  const offset = { x: markerToMove.offsetWidth / 2, y: markerToMove.offsetHeight / 1.5 };
-  markerToMove.style.left = e.clientX - offset.x + 'px';
-  markerToMove.style.top = e.clientY - offset.y + 'px';
+  const xPos = e.clientX;
+  const yPos = e.clientY;
+  const offset = { x: markerToMove.offsetWidth / 2, y: markerToMove.offsetHeight / 2 };
+  markerToMove.style.left = xPos - offset.x + 'px';
+  markerToMove.style.top = yPos - offset.y + 'px';
 };
 
 const PathNavigator = (inPath) => {
@@ -218,6 +314,10 @@ const PathNavigator = (inPath) => {
   const getCurrentMove = () => {
     return currentMove;
   };
+  const setToStart = () => {
+    reset();
+    return path[0];
+  };
 
   return {
     stepBackward,
@@ -226,20 +326,20 @@ const PathNavigator = (inPath) => {
     getCurrent,
     getCurrentMove,
     reset,
+    setToStart,
   };
 };
 
 let start = undefined;
 let end = undefined;
-const updateTreePositions = (p, marker) => {
+const updateTreePositions = (p, marker, runIfValid = true) => {
   start = marker == 'start' ? p : start;
   end = marker == 'end' ? p : end;
-  console.log({ start, end });
 
-  if (start != undefined && end != undefined) runEvaluation(start, end);
+  if (start != undefined && end != undefined && runIfValid) runEvaluation(start, end);
 };
 
-const runEvaluation = (start, end) => {
+const runEvaluation = async (start, end) => {
   let tree = null;
   tree = MovesTree(start, end);
   tree.buildTree();
@@ -260,6 +360,8 @@ const runEvaluation = (start, end) => {
     console.log(`   [${move}]`);
   });
 
-  const path = PathNavigator(paths[0]);
-  showControls(path);
+  const newPath = PathNavigator(paths[0]);
+  if (path == undefined) showControls(newPath);
+  path = newPath;
+  stepMap.textContent = `0/${newPath.getEnd()}`;
 };

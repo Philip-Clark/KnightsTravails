@@ -4,6 +4,8 @@ html,
 body {
   margin: 0;
   padding: 0;
+  height: 100vh;
+  overflow: hidden;
 }
 
 body {
@@ -17,6 +19,23 @@ p {
   font-weight: 900;
   letter-spacing: 0.25em;
   color: white;
+}
+
+#toggleMusic {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  padding: 1em;
+  filter: invert(0.5);
+}
+.icon {
+  transition: transform 0.1s ease;
+}
+.icon:hover {
+  transform: scale(1.1);
+}
+.icon:active {
+  transform: scale(0.99);
 }
 
 #board {
@@ -64,13 +83,15 @@ p {
 #target {
   z-index: 100;
   transition: all 0.3s ease;
+  pointer-events: all;
+  touch-action: none;
 }
 
 #playBar {
   margin: auto;
   padding: 3rem 0;
   display: grid;
-  grid-template-columns: repeat(3, min(50vw, 150px));
+  grid-template-columns: repeat(3, min(33vw, 150px));
   justify-items: center;
   align-items: center;
   justify-content: center;

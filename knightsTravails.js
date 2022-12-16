@@ -26,6 +26,7 @@ const MovesTree = (startCoords, endCoords) => {
   ];
 
   function buildTree(move = start, path = move.path) {
+    console.log(move.posString);
     const newPath = [...path]; //create duplicate history for children
     newPath.push(move.position.toString()); //push this position into that history
     count++;
