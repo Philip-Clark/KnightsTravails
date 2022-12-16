@@ -170,7 +170,6 @@ const showControls = (p) => {
       }
       stepForwardHandler();
     }, 950);
-    console.log(animationInterval);
   };
 
   play.addEventListener('click', playAnimation);
@@ -192,11 +191,23 @@ document.body.append(board);
 document.body.append(playBar);
 
 //#region update pawns width to match cell size
-const cellWidth = document.querySelector('.cell').offsetWidth / 1.5;
-knight.style.width = cellWidth + 'px';
-target.style.width = cellWidth + 'px';
-pawnShelf.style.minHeight = pawnShelf.offsetHeight + 'px';
+
 //#endregion
+
+const rescaleItems = () => {
+  const cellWidth = document.querySelector('.cell').offsetWidth / 1.5;
+  knight.style.width = cellWidth + 'px';
+  target.style.width = cellWidth + 'px';
+  pawnShelf.style.minHeight = pawnShelf.offsetHeight + 'px';
+};
+
+setTimeout(() => {
+  rescaleItems();
+}, 10);
+
+window.addEventListener('resize', () => {
+  rescaleItems();
+});
 
 const getCellPosition = (coords) => {
   const id = coords.toString();
@@ -204,7 +215,7 @@ const getCellPosition = (coords) => {
   const cellOffset = cell.offsetWidth / 2;
   const rect = cell.getBoundingClientRect();
   const widthOffset = cellOffset - knight.offsetWidth / 2;
-  const heightOffset = cellOffset - knight.offsetHeight / 1.1;
+  const heightOffset = cellOffset - knight.height * 1.2;
 
   // const cellMid = cell.offsetWidth / 2;
   const position = {
@@ -229,11 +240,7 @@ const dragKnight = (e) => {
 };
 const dragTarget = (e) => {
   markerToMove = target;
-  if (path != undefined) {
-    let newStart = path.getCurrentMove().split(',');
-    newStart = [parseInt(newStart[0]), parseInt(newStart[1])];
-    updateTreePositions(newStart, 'start');
-  }
+
   startDrag(e);
 };
 
@@ -262,23 +269,24 @@ const endDrag = (e) => {
   target.style.touchAction = 'all';
   knight.style.touchAction = 'all';
 
-  const elementStack = document.elementsFromPoint(e.pageX, e.pageY);
-  const cell = elementStack.filter((element) => element.classList.contains('cell'));
-  if (cell[0] != null) {
-    if (cell[0].id == '1,8') {
-      alert(
-        'You have found a known bug.\n\nPlacing a marker here results in a very long browser freeze, so for your convenience, we have prevented that.\n\n Thanks for understanding'
-      );
-      return;
-    }
+  let cell = getCellAtEventPoint(e);
 
-    dropMarkerOnCell(cell[0].id);
-  }
+  if (cell != null && cell.id == '1,8') {
+    alert(
+      'You have found a known bug.\n\nPlacing a marker here results in a very long browser freeze, so for your convenience, we have prevented that.\n\n Thanks for understanding'
+    );
+    return;
+  } else if (cell != null) dropMarkerOnCell(cell.id);
 
   document.removeEventListener('pointermove', dragMarker);
   document.removeEventListener('pointerup', endDrag);
-
   draggingPiece = false;
+};
+
+const getCellAtEventPoint = (e) => {
+  const elementStack = document.elementsFromPoint(e.pageX, e.pageY);
+  const cell = elementStack.filter((element) => element.classList.contains('cell'));
+  return cell[0];
 };
 
 const dropMarkerOnCell = (id) => {
@@ -287,6 +295,13 @@ const dropMarkerOnCell = (id) => {
   const x = parseInt(id.split(',')[0]);
   const y = parseInt(id.split(',')[1]);
   updateMarkerPosition(markerToMove, id);
+
+  if (path != undefined && markerToMove == target) {
+    let newStart = path.getCurrentMove().split(',');
+    newStart = [parseInt(newStart[0]), parseInt(newStart[1])];
+    updateTreePositions(newStart, 'start');
+  }
+
   updateTreePositions([x, y], markerToMove == knight ? 'start' : 'end');
 };
 
@@ -294,7 +309,7 @@ const dragMarker = (e) => {
   e.preventDefault();
   const xPos = e.clientX;
   const yPos = e.clientY;
-  const offset = { x: markerToMove.offsetWidth / 2, y: markerToMove.offsetHeight / 2 };
+  const offset = { x: markerToMove.offsetWidth / 2, y: markerToMove.height * 1.2 };
   markerToMove.style.left = xPos - offset.x + 'px';
   markerToMove.style.top = yPos - offset.y + 'px';
 };
@@ -353,11 +368,20 @@ const PathNavigator = (inPath) => {
 
 let start = undefined;
 let end = undefined;
-const updateTreePositions = (p, marker, runIfValid = true) => {
-  start = marker == 'start' ? p : start;
-  end = marker == 'end' ? p : end;
 
-  if (start != undefined && end != undefined && runIfValid) runEvaluation(start, end);
+const updateTreePositions = (p, marker, runIfValid = true) => {
+  const newStart = marker == 'start' ? p : start;
+  const newEnd = marker == 'end' ? p : end;
+  if (
+    JSON.stringify(newStart) == JSON.stringify(start) &&
+    JSON.stringify(newEnd) == JSON.stringify(end)
+  )
+    return;
+  start = newStart;
+  end = newEnd;
+  if (start == undefined || end == undefined) return;
+
+  if (runIfValid) runEvaluation(start, end);
 };
 
 const runEvaluation = async (start, end) => {
@@ -367,19 +391,14 @@ const runEvaluation = async (start, end) => {
   let paths = tree.getPaths();
   paths = paths.sort((a, b) => a.length - b.length);
 
-  console.log(`\n\n\nStart: [${start}]\nEnd: [${end}]`);
+  // console.log(`\n\n\nStart: [${start}]\nEnd: [${end}]`);
 
-  console.log(`Total paths checked ${paths.length}`);
+  // console.log(`Total paths checked ${paths.length}`);
 
-  console.log(`\nYou made it in ${paths[0].length} moves! Here's how:`);
-  paths[0].forEach((move) => {
-    console.log(`   [${move}]`);
-  });
-
-  console.log(`\nYou could have taken up to ${paths.at(-1).length} moves! Here's how:`);
-  paths.at(-1).forEach((move) => {
-    console.log(`   [${move}]`);
-  });
+  // console.log(`\nYou made it in ${paths[0].length} moves! Here's how:`);
+  // paths[0].forEach((move) => {
+  //   console.log(`   [${move}]`);
+  // });
 
   const newPath = PathNavigator(paths[0]);
   if (path == undefined) showControls(newPath);

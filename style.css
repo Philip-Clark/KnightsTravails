@@ -15,7 +15,6 @@ body {
   font-family: 'Inter', sans-serif;
   position: relative;
   overflow: hidden;
-  height: 100vh;
   height: calc(var(--vh, 1vh) * 100);
 }
 
@@ -30,16 +29,20 @@ body {
 p {
   text-align: center;
   font-weight: 900;
+  display: none;
   letter-spacing: 0.25em;
   color: white;
 }
 
 #toggleMusic {
   position: absolute;
-  bottom: 0;
+  top: 0;
   right: 0;
-  padding: 1em;
-  filter: invert(0.5);
+  width: 2em;
+  height: 2em;
+  z-index: 100;
+  padding: min(2em, 1vw);
+  animation: zoomOut 2s ease-in-out 0s forwards;
 }
 .icon {
   transition: transform 0.1s ease;
@@ -77,15 +80,9 @@ p {
   transition: border 0.1s ease-in-out;
 }
 
-.cell:hover {
-  transition: border 0s ease-in-out;
-
-  border: dashed 2px #eae0c2;
-}
-
 #pawnShelf {
   margin: auto;
-  padding: clamp(0px, 3vw, 2em) 0;
+  margin: clamp(0px, 3vw, 2em) 1em;
   display: grid;
   grid-template-columns: repeat(2, min(50vw, 150px));
   justify-items: center;
@@ -126,5 +123,20 @@ p {
   text-align: center;
 }
 
-@media (min-width: 600px) {
+@keyframes zoomOut {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 50%) scale(2);
+  }
+  40% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, 50%) scale(2);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }

@@ -1,4 +1,4 @@
-//https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
+//Update algorithm to Dijkstra's algorithm. Reference: https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
 
 const Knight = { position: [] };
 
@@ -12,7 +12,7 @@ const MovesTree = (startCoords, endCoords) => {
   const start = Move(startCoords);
   const end = Move(endCoords);
   const paths = [];
-  let shortest = 100;
+  let shortest = 64;
   let count = 0;
   const directions = [
     [2, 1],
@@ -26,7 +26,6 @@ const MovesTree = (startCoords, endCoords) => {
   ];
 
   function buildTree(move = start, path = move.path) {
-    console.log(move.posString);
     const newPath = [...path]; //create duplicate history for children
     newPath.push(move.position.toString()); //push this position into that history
     count++;
@@ -55,7 +54,9 @@ const MovesTree = (startCoords, endCoords) => {
   }
 
   function moveInPath(move, path) {
-    return path.find((element) => element === move.posString) == undefined ? false : true;
+    const element = path.find((element) => element === move.posString);
+
+    return element == undefined ? false : true;
   }
 
   function getCount() {
