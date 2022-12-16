@@ -93,13 +93,13 @@ musicButton.addEventListener('click', () => {
     musicButton.src = './assets/musicOn.png';
   }
 });
+let stepCount = 0;
 
 //#region playBar
 const showControls = (p) => {
   let currentPosition = 0;
   path = p;
-  let stepCount = path.getEnd();
-
+  stepCount = path.getEnd();
   playBar.id = 'playBar';
 
   stepBackward.src = './assets/chevronRight.png';
@@ -252,7 +252,16 @@ const endDrag = (e) => {
 
   const elementStack = document.elementsFromPoint(e.pageX, e.pageY);
   const cell = elementStack.filter((element) => element.classList.contains('cell'));
-  if (cell[0] != null) dropMarkerOnCell(cell[0].id);
+  if (cell[0] != null) {
+    if (cell[0].id == '1,8') {
+      alert(
+        'You have found a known bug.\n\nPlacing a marker here results in a very long browser freeze, so for your convenience, we have prevented that.\n\n Thanks for understanding'
+      );
+      return;
+    }
+
+    dropMarkerOnCell(cell[0].id);
+  }
 
   document.removeEventListener('pointermove', dragMarker);
   document.removeEventListener('pointerup', endDrag);
