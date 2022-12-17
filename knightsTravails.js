@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 //Update algorithm to Dijkstra's algorithm. Reference: https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
+=======
+>>>>>>> ffd59a1da6980e8088f91ca69b1a53f73fb163ad
 
 const Knight = { position: [] };
 
