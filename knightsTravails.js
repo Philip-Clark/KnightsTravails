@@ -12,7 +12,7 @@ const MovesTree = (startCoords, endCoords) => {
   const start = Move(startCoords);
   const end = Move(endCoords);
   const paths = [];
-  let shortest = 64;
+  let shortest = 12;
   let count = 0;
   const directions = [
     [2, 1],

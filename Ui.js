@@ -158,16 +158,18 @@ const showControls = (p) => {
 
   updateStepCounter();
 
-  const playAnimation = () => {
+  const playAnimation = async () => {
     stopAnimation();
-    path.reset();
-    play.classList.toggle('disabled');
-    updateMarkerPosition(knight, path.getCurrentMove());
-    stepForwardHandler();
+    if (!path.isAtStart()) {
+      soundEffects.playSound(placementSound, 150);
+
+      await updateMarkerPosition(knight, path.getStart());
+
+      path.reset();
+    } else stepForwardHandler();
+
     animationInterval = setInterval(() => {
-      if (path.getCurrent() == path.getEnd()) {
-        stopAnimation();
-      }
+      if (path.getCurrent() == path.getEnd()) stopAnimation();
       stepForwardHandler();
     }, 950);
   };
@@ -177,7 +179,6 @@ const showControls = (p) => {
 
 const stopAnimation = () => {
   clearInterval(animationInterval);
-  play.classList.remove('disabled');
 };
 
 const spreader = document.createElement('div');
@@ -229,6 +230,9 @@ const updateMarkerPosition = (marker, position) => {
   const screenLocation = getCellPosition(position);
   marker.style.top = screenLocation.y + 'px';
   marker.style.left = screenLocation.x + 'px';
+  setTimeout(() => {
+    return; //wait for our 0.3s animation
+  }, 300);
 };
 
 let markerToMove = knight;
@@ -268,15 +272,11 @@ const endDrag = (e) => {
   target.style.pointerEvents = 'all';
   target.style.touchAction = 'all';
   knight.style.touchAction = 'all';
+  soundEffects.playSound(placementSound, 0);
 
   let cell = getCellAtEventPoint(e);
 
-  if (cell != null && cell.id == '1,8') {
-    alert(
-      'You have found a known bug.\n\nPlacing a marker here results in a very long browser freeze, so for your convenience, we have prevented that.\n\n Thanks for understanding'
-    );
-    return;
-  } else if (cell != null) dropMarkerOnCell(cell.id);
+  if (cell != null) dropMarkerOnCell(cell.id);
 
   document.removeEventListener('pointermove', dragMarker);
   document.removeEventListener('pointerup', endDrag);
@@ -290,7 +290,6 @@ const getCellAtEventPoint = (e) => {
 };
 
 const dropMarkerOnCell = (id) => {
-  soundEffects.playSound(placementSound);
   if (!draggingPiece) return;
   const x = parseInt(id.split(',')[0]);
   const y = parseInt(id.split(',')[1]);
@@ -343,6 +342,14 @@ const PathNavigator = (inPath) => {
     return end;
   };
 
+  const getStart = () => {
+    return path[0];
+  };
+
+  const isAtStart = () => {
+    return position == 0;
+  };
+
   const getCurrent = () => {
     return position;
   };
@@ -363,6 +370,8 @@ const PathNavigator = (inPath) => {
     getCurrentMove,
     reset,
     setToStart,
+    getStart,
+    isAtStart,
   };
 };
 
@@ -390,15 +399,6 @@ const runEvaluation = async (start, end) => {
   tree.buildTree();
   let paths = tree.getPaths();
   paths = paths.sort((a, b) => a.length - b.length);
-
-  // console.log(`\n\n\nStart: [${start}]\nEnd: [${end}]`);
-
-  // console.log(`Total paths checked ${paths.length}`);
-
-  // console.log(`\nYou made it in ${paths[0].length} moves! Here's how:`);
-  // paths[0].forEach((move) => {
-  //   console.log(`   [${move}]`);
-  // });
 
   const newPath = PathNavigator(paths[0]);
   if (path == undefined) showControls(newPath);
