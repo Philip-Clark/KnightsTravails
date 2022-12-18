@@ -160,11 +160,11 @@ const showControls = (p) => {
 
   const playAnimation = async () => {
     stopAnimation();
+    await updateMarkerPosition(target, path.getEndMove());
+    await updateMarkerPosition(knight, path.getStart());
+
     if (!path.isAtStart()) {
       soundEffects.playSound(placementSound, 150);
-
-      await updateMarkerPosition(knight, path.getStart());
-
       path.reset();
     } else stepForwardHandler();
 
@@ -199,7 +199,9 @@ const rescaleItems = () => {
   const cellWidth = document.querySelector('.cell').offsetWidth / 1.5;
   knight.style.width = cellWidth + 'px';
   target.style.width = cellWidth + 'px';
-  pawnShelf.style.minHeight = pawnShelf.offsetHeight + 'px';
+  if (path == undefined) return;
+  updateMarkerPosition(knight, path.getCurrentMove());
+  updateMarkerPosition(target, path.getEndMove());
 };
 
 setTimeout(() => {
@@ -342,6 +344,10 @@ const PathNavigator = (inPath) => {
     return end;
   };
 
+  const getEndMove = () => {
+    return path.at(-1);
+  };
+
   const getStart = () => {
     return path[0];
   };
@@ -372,6 +378,7 @@ const PathNavigator = (inPath) => {
     setToStart,
     getStart,
     isAtStart,
+    getEndMove,
   };
 };
 

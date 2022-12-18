@@ -84,6 +84,7 @@ p {
   margin: auto;
   margin: clamp(0px, 3vw, 2em) 1em;
   display: grid;
+  min-height: min(12vw, 300px);
   grid-template-columns: repeat(2, min(50vw, 150px));
   justify-items: center;
   justify-content: center;
